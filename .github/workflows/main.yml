@@ -1,0 +1,30 @@
+name: main
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v19
+
+      - name: Build Image
+        run: |
+          echo ${{ github.repository }} | tee repo.txt
+          nix build -L .#image
+          docker image load < result
+
+      - name: Push to GHCR
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+          tags: ghcr.io/${{ github.repository }}:${{ github.ref_name }}

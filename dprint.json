@@ -1,0 +1,7 @@
+{
+	"toml": {
+		"useTabs": true
+	},
+	"excludes": [],
+	"plugins": ["https://plugins.dprint.dev/toml-0.7.0.wasm"]
+}
