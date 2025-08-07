@@ -9,6 +9,10 @@ on:
 jobs:
   main:
     runs-on: ubuntu-latest
+
+    permissions:
+      packages: write
+
     steps:
       - name: Checkout the repo
         uses: actions/checkout@v4
@@ -18,9 +22,9 @@ jobs:
 
       - name: Build Image
         run: |
-          echo ${{ github.repository }} | tee repo.txt
+          echo ${{ github.repository }} > repo.txt
           nix build -L .#image
-          docker image load < result
+          podman image load < result
 
       - name: Push to GHCR
         uses: redhat-actions/push-to-registry@v2

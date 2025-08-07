@@ -3,12 +3,12 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
-        inherit (pkgs.lib) getExe readFile trim;
+        inherit (pkgs.lib) getExe pipe readFile toLower trim;
         inherit (pkgs.lib.fileset) toSource unions;
 
         py = pkgs.python3.pkgs;
-        proj = (fromTOML (readFile ./pyproject.toml)).project;
-        repo = trim (readFile ./repo.txt);
+        proj = pipe ./pyproject.toml [ readFile fromTOML (x: x.project) ];
+        repo = pipe ./repo.txt [ readFile trim toLower ];
       in
       rec {
         packages = rec {
