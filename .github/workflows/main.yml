@@ -69,3 +69,4 @@ jobs:
 
           podman login ghcr.io -u ${{ github.actor }} -p ${{ github.token }}
           podman push "$name"
+          podman push "$name" "$base:latest"
