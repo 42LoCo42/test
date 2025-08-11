@@ -60,11 +60,12 @@ jobs:
       - name: Create multiarch manifest
         run: |
           echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]' > repo
-          name="ghcr.io/$(< repo)"
+          base="ghcr.io/$(< repo)"
+          name="$base:${{ github.ref_name }}"
 
           podman manifest create "$name"     \
-            "$name@$(< digest-amd64/digest)" \
-            "$name@$(< digest-arm64/digest)"
+            "$base@$(< digest-amd64/digest)" \
+            "$base@$(< digest-arm64/digest)"
 
           podman login ghcr.io -u ${{ github.actor }} -p ${{ github.token }}
           podman push "$name"
