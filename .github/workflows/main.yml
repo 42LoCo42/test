@@ -7,8 +7,16 @@ on:
       - "*"
 
 jobs:
-  main:
-    runs-on: ubuntu-24.04-arm
+  build-images:
+    strategy:
+      matrix:
+        include:
+          - name: amd64
+            os: ubuntu-24.04
+          - name: arm64
+            os: ubuntu-24.04-arm
+
+    runs-on: ${{ matrix.os }}
 
     permissions:
       packages: write
@@ -22,14 +30,41 @@ jobs:
 
       - name: Build Image
         run: |
-          which parallel || :
-          echo ${{ github.repository }} > repo.txt
+          echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]' > repo
           nix build -L .#image
-          podman image load < result
+          podman load < result | grep -oP 'Loaded image: \K.*' > image
 
       - name: Push to GHCR
-        uses: redhat-actions/push-to-registry@v2
+        run: |
+          podman login ghcr.io -u ${{ github.actor }} -p ${{ github.token }}
+          podman push --digestfile digest "$(< image)" "ghcr.io/$(< repo)"
+
+      - name: Save image digest
+        uses: actions/upload-artifact@v4
         with:
-          username: ${{ github.actor }}
-          password: ${{ github.token }}
-          tags: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+          name: "digest-${{ matrix.name }}"
+          path: "digest"
+
+  publish-combined-image:
+    needs: build-images
+
+    runs-on: ubuntu-24.04
+
+    permissions:
+      packages: write
+
+    steps:
+      - name: Load image digests
+        uses: actions/download-artifact@v5
+
+      - name: Create multiarch manifest
+        run: |
+          echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]' > repo
+          name="ghcr.io/$(< repo)"
+
+          podman manifest create "$name"     \
+            "$name@$(< digest-amd64/digest)" \
+            "$name@$(< digest-arm64/digest)"
+
+          podman login ghcr.io -u ${{ github.actor }} -p ${{ github.token }}
+          podman push "$name"

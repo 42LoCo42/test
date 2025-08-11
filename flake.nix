@@ -8,7 +8,7 @@
 
         py = pkgs.python3.pkgs;
         proj = pipe ./pyproject.toml [ readFile fromTOML (x: x.project) ];
-        repo = pipe ./repo.txt [ readFile trim toLower ];
+        repo = pipe ./repo [ readFile trim toLower ];
       in
       rec {
         packages = rec {
@@ -38,8 +38,7 @@
           };
 
           image = pkgs.dockerTools.buildImage {
-            name = "ghcr.io/${repo}";
-            tag = proj.version;
+            inherit (proj) name;
 
             config = {
               Cmd = [ (getExe default) ];
