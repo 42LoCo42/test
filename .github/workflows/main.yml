@@ -8,7 +8,7 @@ on:
 
 jobs:
   main:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
 
     permissions:
       packages: write
@@ -22,6 +22,7 @@ jobs:
 
       - name: Build Image
         run: |
+          which parallel || :
           echo ${{ github.repository }} > repo.txt
           nix build -L .#image
           podman image load < result
